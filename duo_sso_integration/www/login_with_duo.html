@@ -1,0 +1,7 @@
+{% extends "templates/web.html" %}
+{% block page_content %}
+<h1>Login with Duo</h1>
+<a href="/api/method/duo_sso_integration.api.oauth.start">
+    <button type="button" class="btn btn-primary">Sign in with Duo SSO</button>
+</a>
+{% endblock %}

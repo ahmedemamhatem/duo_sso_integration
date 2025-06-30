@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "creation": "2025-06-30 21:51:01.283127",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "client_id",
+  "provision_new_users",
+  "column_break_kuqh",
+  "client_secret",
+  "disable_normal_login",
+  "section_break_agtc",
+  "token_url",
+  "authorization_url",
+  "column_break_gyme",
+  "userinfo_url",
+  "redirect_uri"
+ ],
+ "fields": [
+  {
+   "description": "The public identifier for your Duo OIDC application. Get this from your Duo Admin Panel.",
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Client ID",
+   "reqd": 1
+  },
+  {
+   "description": "A secret key for your OIDC app. Keep this confidential! Used to securely exchange tokens.",
+   "fieldname": "client_secret",
+   "fieldtype": "Password",
+   "in_list_view": 1,
+   "label": "Client Secret",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_gyme",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The URL where users are redirected to log in with Duo SSO. Starts the OIDC authentication flow.",
+   "fieldname": "authorization_url",
+   "fieldtype": "Data",
+   "label": "Authorization URL",
+   "reqd": 1
+  },
+  {
+   "description": "The URL your app uses to exchange the authorization code for access and ID tokens.",
+   "fieldname": "token_url",
+   "fieldtype": "Data",
+   "label": "Token URL",
+   "reqd": 1
+  },
+  {
+   "description": "The URL to fetch information (like email address) about the authenticated user. Use access token.",
+   "fieldname": "userinfo_url",
+   "fieldtype": "Data",
+   "label": "UserInfo URL",
+   "reqd": 1
+  },
+  {
+   "description": "The URL Duo will redirect the user to after authentication. Must match the value registered in Duo. This should point to your ERPNext site\u2019s OAuth callback endpoint.",
+   "fieldname": "redirect_uri",
+   "fieldtype": "Data",
+   "label": "Redirect URI",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_kuqh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_agtc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "provision_new_users",
+   "fieldtype": "Check",
+   "label": "Provision New Users via SSO"
+  },
+  {
+   "default": "0",
+   "fieldname": "disable_normal_login",
+   "fieldtype": "Check",
+   "label": "Disable Normal Login"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-06-30 22:31:27.214253",
+ "modified_by": "Administrator",
+ "module": "Duo Sso Integration",
+ "name": "Duo SSO Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -5,8 +5,12 @@ app_description = "bench new-app duo_sso_integration"
 app_email = "ahmedemamhatem@gmail.com"
 app_license = "mit"
 
-# Apps
-# ------------------
+override_whitelisted_methods = {
+    "frappe.www.login.login": "duo_sso_integration.api.oauth.start"
+}
+
+web_include_js = ["/assets/duo_sso_integration/js/duo_login.js"]
+
 
 # required_apps = []
 
