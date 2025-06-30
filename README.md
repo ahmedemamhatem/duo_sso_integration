@@ -27,15 +27,6 @@ This app enables seamless [Cisco Duo](https://duo.com/) Single Sign-On (SSO) for
 
 ---
 
-## Screenshots
-
-<!--
-If you have screenshots, place them in the repo (e.g., `docs/`) and display them here:
-
-![Login Page with Duo SSO Button](docs/login-duo-sso.png)
--->
-
----
 
 ## Installation
 
