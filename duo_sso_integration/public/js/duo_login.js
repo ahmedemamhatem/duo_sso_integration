@@ -180,6 +180,7 @@ frappe.ready(function () {
                 <span class="duo-text">Continue with <span class="duo-accent">Duo</span></span>
             `;
             ssoBtn.onclick = function () {
+                showDuoStatus("Waiting for Duo Push approval...");
                 window.location.href = "/api/method/duo_sso_integration.api.oauth.start";
             };
 
@@ -204,3 +205,34 @@ frappe.ready(function () {
         }
     });
 });
+
+
+function showDuoStatus(msg) {
+    let overlay = document.getElementById('duo-sso-status');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'duo-sso-status';
+        overlay.innerHTML = `
+            <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(255,255,255,0.77);display:flex;align-items:center;justify-content:center;">
+                <div style="text-align:center;">
+                    <div class="duo-spinner" style="margin-bottom:18px;">
+                        <svg width="48" height="48" viewBox="0 0 50 50" aria-label="Loading...">
+                            <circle cx="25" cy="25" r="20" stroke="#74bf4b" stroke-width="5" fill="none" stroke-linecap="round">
+                                <animateTransform attributeName="transform" type="rotate" dur="1s" from="0 25 25" to="360 25 25" repeatCount="indefinite"/>
+                            </circle>
+                        </svg>
+                    </div>
+                    <div style="font-size:1.15em;font-weight:600;color:#4d4d4f;">${msg}</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    } else {
+        overlay.querySelector('div[style*="font-size"]').innerText = msg;
+        overlay.style.display = 'flex';
+    }
+}
+function hideDuoStatus() {
+    let overlay = document.getElementById('duo-sso-status');
+    if (overlay) overlay.style.display = 'none';
+}
