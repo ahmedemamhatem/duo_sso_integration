@@ -1,0 +1,133 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-07-09 20:44:33.481555",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_oauth",
+  "enable",
+  "client_id",
+  "client_secret",
+  "scope",
+  "tenant_id",
+  "column_break_1",
+  "authority_url",
+  "authorization_endpoint",
+  "token_endpoint",
+  "userinfo_endpoint",
+  "section_break_options",
+  "disable_normal_login"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_oauth",
+   "fieldtype": "Section Break",
+   "label": "Microsoft SSO OAuth2 Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enable"
+  },
+  {
+   "default": "3bb460ba-55e9-4ded-a180-6f21230b998d",
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Client ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "client_secret",
+   "fieldtype": "Password",
+   "label": "Client Secret",
+   "reqd": 1
+  },
+  {
+   "default": "openid email profile",
+   "description": "Space-separated OAuth2 scopes (e.g. openid email profile)",
+   "fieldname": "scope",
+   "fieldtype": "Data",
+   "label": "Scope",
+   "reqd": 1
+  },
+  {
+   "default": "28a4cf11-f383-4845-bf32-a6cdadf71cd2",
+   "description": "Azure Directory (Tenant) ID",
+   "fieldname": "tenant_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tenant ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "https://login.microsoftonline.com/28a4cf11-f383-4845-bf32-a6cdadf71cd2",
+   "description": "Base authority URL for your Azure AD tenant",
+   "fieldname": "authority_url",
+   "fieldtype": "Data",
+   "label": "Authority URL"
+  },
+  {
+   "default": "https://login.microsoftonline.com/28a4cf11-f383-4845-bf32-a6cdadf71cd2/oauth2/v2.0/authorize",
+   "fieldname": "authorization_endpoint",
+   "fieldtype": "Data",
+   "label": "Authorization Endpoint"
+  },
+  {
+   "default": "https://login.microsoftonline.com/28a4cf11-f383-4845-bf32-a6cdadf71cd2/oauth2/v2.0/token",
+   "fieldname": "token_endpoint",
+   "fieldtype": "Data",
+   "label": "Token Endpoint"
+  },
+  {
+   "default": "https://graph.microsoft.com/oidc/userinfo",
+   "fieldname": "userinfo_endpoint",
+   "fieldtype": "Data",
+   "label": "User Info Endpoint"
+  },
+  {
+   "fieldname": "section_break_options",
+   "fieldtype": "Section Break",
+   "label": "Options"
+  },
+  {
+   "default": "0",
+   "description": "Hide classic username/password fields and force SSO",
+   "fieldname": "disable_normal_login",
+   "fieldtype": "Check",
+   "label": "Disable Normal Login"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-07-09 21:38:12.994729",
+ "modified_by": "Administrator",
+ "module": "Duo Sso Integration",
+ "name": "MS SSO Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
