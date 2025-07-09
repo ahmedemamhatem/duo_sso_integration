@@ -10,8 +10,11 @@ frappe.ready(function () {
                     let duoEnabled = duo.message && (duo.message.enable == 1 || duo.message.enable === "1");
                     let msEnabled = ms.message && (ms.message.enable == 1 || ms.message.enable === "1");
 
-                    let disableNormalLogin = (duo.message && (duo.message.disable_normal_login == 1 || duo.message.disable_normal_login === "1"))
-                        || (ms.message && (ms.message.disable_normal_login == 1 || ms.message.disable_normal_login === "1"));
+                    // FIXED: Only consider disableNormalLogin for enabled providers!
+                    let disableNormalLogin =
+                        (duoEnabled && duo.message && (duo.message.disable_normal_login == 1 || duo.message.disable_normal_login === "1"))
+                        ||
+                        (msEnabled && ms.message && (ms.message.disable_normal_login == 1 || ms.message.disable_normal_login === "1"));
 
                     let loginForm = document.querySelector('form[data-login-form]')
                         || document.querySelector('.page-card')
