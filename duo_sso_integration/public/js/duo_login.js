@@ -1,238 +1,158 @@
 frappe.ready(function () {
     frappe.call({
-        method: "duo_sso_integration.api.oauth.get_duo_sso_settings",
-        callback: function (r) {
-            let disableNormalLogin = r.message && (r.message.disable_normal_login === 1 || r.message.disable_normal_login === "1");
+        method: "duo_sso_integration.api.oauth.get_sso_settings_info",
+        args: { provider: "duo" },
+        callback: function (duo) {
+            frappe.call({
+                method: "duo_sso_integration.api.oauth.get_sso_settings_info",
+                args: { provider: "ms" },
+                callback: function (ms) {
+                    let duoEnabled = duo.message && (duo.message.enable == 1 || duo.message.enable === "1");
+                    let msEnabled = ms.message && (ms.message.enable == 1 || ms.message.enable === "1");
 
-            let loginForm =
-                document.querySelector('form[data-login-form]') ||
-                document.querySelector('.page-card') ||
-                document.querySelector('form');
-            if (!loginForm || document.getElementById('duo-sso-btn')) return;
+                    let disableNormalLogin = (duo.message && (duo.message.disable_normal_login == 1 || duo.message.disable_normal_login === "1"))
+                        || (ms.message && (ms.message.disable_normal_login == 1 || ms.message.disable_normal_login === "1"));
 
-            // Inject CSS
-            if (!document.getElementById('duo-sso-css')) {
-                const style = document.createElement('style');
-                style.id = 'duo-sso-css';
-                style.textContent = `
-#duo-sso-label {
-    display: flex;
-    align-items: center;
-    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
-    font-weight: 800;
-    font-size: 1.28em;
-    letter-spacing: 0.01em;
-    color: #1F2B35;
-    gap: 0.7em;
-    margin: 34px 0 14px 0;
-    animation: duoFadeIn 0.7s cubic-bezier(.39,.58,.57,1.01);
+                    let loginForm = document.querySelector('form[data-login-form]')
+                        || document.querySelector('.page-card')
+                        || document.querySelector('form');
+                    if (!loginForm) return;
+
+                    // Get the main login button as reference
+                    const loginBtn = loginForm.querySelector('button[type="submit"]');
+                    const loginBtnClasses = loginBtn ? Array.from(loginBtn.classList) : ['btn', 'btn-primary', 'btn-block'];
+                    const loginBtnStyle = loginBtn ? loginBtn.getAttribute('style') : 'width:100%;margin:12px 0;';
+
+                    function insertAfter(newNode, referenceNode) {
+                        if (referenceNode.nextSibling) {
+                            referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+                        } else {
+                            referenceNode.parentNode.appendChild(newNode);
+                        }
+                    }
+
+                    // SVGs
+                    const duoLogoSVG = `<span class="sso-icon" style="margin-right:10px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 211.1 102.4" width="34" height="16" aria-label="Duo logo"><g><path style="opacity:.8;fill:#74bf4b" d="M.3,102.4h34c18.2,0,33.1-14.3,34-32.3H.3v32.3h0Z"/><path style="fill:#74bf4b" d="M34.3,34.3H.3v32.3h68c-.9-18-15.8-32.3-34-32.3"/><path style="fill:#74bf4b" d="M177.2,34.3c-18.2,0-33.1,14.3-34,32.3h67.9c-.9-18-15.8-32.3-34-32.3"/><path style="opacity:.8;fill:#74bf4b" d="M177.2,102.4c18.2,0,33.1-14.3,34-32.3h-67.9c.9,18,15.8,32.3,34,32.3"/><path style="fill:#74bf4b" d="M71.7,34.3v34c0,18.2,14.3,33.1,32.3,34V34.3h-32.3Z"/><polygon style="opacity:.8;fill:#74bf4b" points="107.4 34.3 107.4 102.4 139.8 102.4 139.8 68.3 139.8 34.3 107.4 34.3"/></g></svg></span>`;
+                    const msLogoSVG = `<span class="sso-icon" style="margin-right:10px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="22" height="22" aria-label="Microsoft logo"><rect width="14" height="14" x="1" y="1" fill="#f35325"/><rect width="14" height="14" x="17" y="1" fill="#81bc06"/><rect width="14" height="14" x="1" y="17" fill="#05a6f0"/><rect width="14" height="14" x="17" y="17" fill="#ffba08"/><rect width="30" height="30" x="1" y="1" fill="none" stroke="#ccc" stroke-width="0.6"/></svg></span>`;
+
+                    // Remove previous SSO buttons if any (avoid dupes)
+                    loginForm.querySelectorAll('.sso-btn').forEach(el => el.remove());
+
+                    // Place SSO buttons after main login button
+                    let lastInserted = loginBtn;
+
+                    // Microsoft SSO button
+                    if (msEnabled) {
+                        const msBtn = document.createElement('button');
+                        msBtn.type = "button";
+                        msBtn.className = [...loginBtnClasses, 'sso-btn', 'ms'].join(' ');
+                        msBtn.style = loginBtnStyle || 'width:100%;margin:12px 0;';
+                        msBtn.innerHTML = `${msLogoSVG}<span class="sso-text">Sign in with Microsoft</span>`;
+                        msBtn.onclick = function () {
+                            showSsoStatus("Redirecting to Microsoft SSO...", "#0078d4");
+                            window.location.href = "/api/method/duo_sso_integration.api.oauth.start?provider=ms";
+                        };
+                        insertAfter(msBtn, lastInserted);
+                        lastInserted = msBtn;
+                    }
+
+                    // Duo SSO button
+                    if (duoEnabled) {
+                        const duoBtn = document.createElement('button');
+                        duoBtn.type = "button";
+                        duoBtn.className = [...loginBtnClasses, 'sso-btn', 'duo'].join(' ');
+                        duoBtn.style = loginBtnStyle || 'width:100%;margin:12px 0;';
+                        duoBtn.innerHTML = `${duoLogoSVG}<span class="sso-text">Sign in with Duo</span>`;
+                        duoBtn.onclick = function () {
+                            showSsoStatus("Waiting for Duo Push approval...", "#74bf4b");
+                            window.location.href = "/api/method/duo_sso_integration.api.oauth.start?provider=duo";
+                        };
+                        insertAfter(duoBtn, lastInserted);
+                        lastInserted = duoBtn;
+                    }
+
+                    // Hide classic login form fields if either disables normal login
+                    if (disableNormalLogin) {
+                        loginForm.querySelectorAll('input, label, .form-group').forEach(el => el.style.display = "none");
+                        loginForm.querySelectorAll(
+                            '.es-lock, a.forgot-password, a[href*="forgot"], .es-line-lock, .toggle-password.text-muted, .field-icon.password-icon'
+                        ).forEach(el => el.style.display = "none");
+                        if (loginBtn) loginBtn.style.display = "none";
+                    }
+
+                    // Inject minimal SSO CSS if not yet present
+                    if (!document.getElementById('sso-css')) {
+                        const style = document.createElement('style');
+                        style.id = 'sso-css';
+                        style.textContent = `
+.sso-btn.ms {
+    background: linear-gradient(90deg, #0078d4 0%, #61aeee 100%) !important;
+    color: #fff !important;
+    border: none !important;
 }
-#duo-sso-label span {
+.sso-btn.duo {
+    background: linear-gradient(90deg, #74bf4b 0%, #b6e099 100%) !important;
+    color: #fff !important;
+    border: none !important;
+}
+.sso-btn .sso-icon {
     display: inline-block;
     vertical-align: middle;
+    margin-bottom: -2px;
 }
-#duo-sso-label .duo-head {
-    color: #74bf4b;
-    font-weight: 800;
-    text-shadow: 0 1px 6px rgba(116,191,75,0.11);
-}
-#duo-sso-label .duo-brand {
-    color: #4d4d4f;
-    font-weight: 900;
-    letter-spacing: 0.03em;
-    text-shadow: 0 1px 12px rgba(77,77,79,0.09);
-}
-#duo-sso-btn {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1em;
-    background: linear-gradient(100deg, #74bf4b 0%, #b6e099 60%, #4d4d4f 100%);
-    color: #fff;
-    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
-    font-weight: 800;
-    font-size: 1.09em;
-    padding: 0.95em 1.4em;
-    border-radius: 11px;
-    border: none;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 8px;
-    margin-top: 0;
-    box-shadow: 0 4px 24px rgba(77,77,79,0.10), 0 1.5px 6px rgba(116,191,75,.09);
-    background-size: 250% auto;
-    background-position: left center;
-    transition: 
-        background-position 0.55s cubic-bezier(.42,.73,.51,1.02),
-        box-shadow 0.20s,
-        transform 0.18s;
-    animation: duoFadeIn 0.88s cubic-bezier(.39,.58,.57,1.01);
-}
-#duo-sso-btn:hover, #duo-sso-btn:focus {
-    background-position: right center;
-    box-shadow: 0 8px 32px 0 rgba(77,77,79,0.19), 0 2px 12px rgba(116,191,75,.11);
-    transform: translateY(-2px) scale(1.022);
-    outline: none;
-}
-#duo-sso-btn:focus-visible {
-    outline: 2.5px solid #74bf4b;
-    outline-offset: 2.5px;
-}
-#duo-sso-btn .duo-icon {
-    flex-shrink: 0;
-    display: inline-block;
-    vertical-align: middle;
-    transition: filter 0.3s, transform 0.3s;
-    will-change: transform, filter;
-}
-#duo-sso-btn:hover .duo-icon,
-#duo-sso-btn:focus .duo-icon {
-    animation: duoPulse 0.75s cubic-bezier(.46,.03,.52,.96) 1;
-    filter: drop-shadow(0 0 10px #74bf4b66) brightness(1.09);
-    transform: scale(1.10) rotate(-7deg);
-}
-#duo-sso-btn .duo-text {
-    font-weight: 900;
+.sso-btn .sso-text {
+    font-weight: 700;
     letter-spacing: 0.01em;
-    line-height: 1.23;
-    font-size: 1.03em;
-    color: #111;
-    text-shadow: none;
-    display: inline-block;
+    font-size: 1em;
+    vertical-align: middle;
 }
-#duo-sso-btn .duo-accent {
-    color: #74bf4b;
-    font-weight: 900;
-    letter-spacing: 0.04em;
-    text-shadow: none;
+.sso-btn:focus, .sso-btn:focus-visible {
+    outline: 2.5px solid #0078d4;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2.5px #0078d466;
+    transform: scale(1.015);
 }
-#duo-sso-btn svg {
-    width: 50px;
-    height: 24px;
+.sso-btn.duo:focus, .sso-btn.duo:focus-visible { outline-color: #74bf4b; }
+@media (max-width: 600px) {
+    .sso-btn { font-size: 0.96em; }
 }
-@keyframes duoPulse {
-    0% { transform: scale(1) rotate(0deg);}
-    40% { transform: scale(1.19) rotate(-11deg);}
-    60% { transform: scale(1.1) rotate(-7deg);}
-    100% { transform: scale(1.10) rotate(-7deg);}
-}
-@keyframes duoFadeIn {
-    from { opacity: 0; transform: translateY(18px);}
-    to   { opacity: 1; transform: translateY(0);}
-}
-@media (max-width: 520px) {
-    #duo-sso-btn { font-size: 0.98em; padding: 0.70em 0.9em;}
-    #duo-sso-label { font-size: 1em; }
-    #duo-sso-btn .duo-icon svg { width: 34px; height: 16px; }
-}
-                `;
-                document.head.appendChild(style);
-            }
-
-            // Official Cisco Duo Logo SVG from duo.com/images/duo-logo.svg
-            const duoLogoSVG = `
-<span class="duo-icon">
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 211.1 102.4" width="50" height="24" aria-label="Duo logo">
-  <defs>
-    <style>
-      .st0 { fill: #4d4d4f; }
-      .st1 { opacity: .8; fill: #74bf4b; }
-      .st2 { fill: #74bf4b; }
-    </style>
-  </defs>
-  <g>
-    <path class="st1" d="M.3,102.4h34c18.2,0,33.1-14.3,34-32.3H.3v32.3h0Z"/>
-    <path class="st2" d="M34.3,34.3H.3v32.3h68c-.9-18-15.8-32.3-34-32.3"/>
-    <path class="st2" d="M177.2,34.3c-18.2,0-33.1,14.3-34,32.3h67.9c-.9-18-15.8-32.3-34-32.3"/>
-    <path class="st1" d="M177.2,102.4c18.2,0,33.1-14.3,34-32.3h-67.9c.9,18,15.8,32.3,34,32.3"/>
-    <path class="st2" d="M71.7,34.3v34c0,18.2,14.3,33.1,32.3,34V34.3h-32.3Z"/>
-    <polygon class="st1" points="107.4 34.3 107.4 102.4 139.8 102.4 139.8 68.3 139.8 34.3 107.4 34.3"/>
-  </g>
-  <g>
-    <rect class="st0" x="18.7" y=".3" width="4.3" height="17"/>
-    <path class="st0" d="M44.4,8.8c0,5.5,4.2,8.8,9,8.8s3.3-.5,3.9-.6v-4.6c-.2,0-1.6.9-3.6.9-2.8,0-4.7-2-4.7-4.5s1.9-4.5,4.7-4.5,3.4.8,3.6.9V.6c-.4-.1-1.9-.6-3.9-.6-5.2,0-9,3.7-9,8.8Z"/>
-    <path class="st0" d="M0,8.8c0,5.5,4.2,8.8,9,8.8s3.3-.5,3.9-.6v-4.6c-.2,0-1.6.9-3.6.9-2.8,0-4.7-2-4.7-4.5s1.9-4.5,4.7-4.5,3.4.8,3.6.9V.6c-.4-.1-1.9-.6-3.9-.6C3.8,0,0,3.7,0,8.8Z"/>
-    <path class="st0" d="M70.6,0c-5.2,0-8.9,3.9-8.9,8.8s3.7,8.8,8.9,8.8,8.9-3.9,8.9-8.8S75.8,0,70.6,0ZM70.6,13.3c-2.5,0-4.4-2-4.4-4.5s1.9-4.5,4.4-4.5,4.4,2,4.4,4.5-1.9,4.5-4.4,4.5Z"/>
-    <path class="st0" d="M36.2,7l-1.2-.4c-.7-.2-1.9-.6-1.9-1.6s.9-1.4,2.6-1.4,3.3.5,3.3.5V.5c-.1,0-2.1-.5-4.1-.5-3.9,0-6.3,2.1-6.3,5.3s2,4.2,4.3,5c.3,0,.7.2.9.3,1.1.3,1.9.8,1.9,1.7s-1,1.6-3.1,1.6-3.6-.5-4-.6v3.9c.2,0,2.3.5,4.6.5,3.3,0,7-1.4,7-5.7s-1.3-4-4-4.9Z"/>
-  </g>
-</svg>
-</span>`;
-
-            // Label above the button
-            const ssoLabel = document.createElement('div');
-            ssoLabel.id = 'duo-sso-label';
-            ssoLabel.innerHTML = `
-                ${duoLogoSVG}
-                <span>
-                  <span class="duo-head">Sign in with</span> 
-                  <span class="duo-brand">Duo SSO</span>
-                </span>
-            `;
-
-            // The Button
-            const ssoBtn = document.createElement('button');
-            ssoBtn.type = "button";
-            ssoBtn.id = "duo-sso-btn";
-            ssoBtn.innerHTML = `
-                ${duoLogoSVG}
-                <span class="duo-text">Continue with <span class="duo-accent">Duo</span></span>
-            `;
-            ssoBtn.onclick = function () {
-                showDuoStatus("Waiting for Duo Push approval...");
-                window.location.href = "/api/method/duo_sso_integration.api.oauth.start";
-            };
-
-            // Insert label and button
-            const loginBtn = loginForm.querySelector('button[type="submit"]');
-            if (loginBtn && loginBtn.parentNode) {
-                loginBtn.parentNode.insertBefore(ssoLabel, loginBtn.nextSibling);
-                loginBtn.parentNode.insertBefore(ssoBtn, ssoLabel.nextSibling);
-            } else {
-                loginForm.appendChild(ssoLabel);
-                loginForm.appendChild(ssoBtn);
-            }
-
-            // Disable default login form and hide icons/links if needed
-            if (disableNormalLogin) {
-                if (loginBtn) loginBtn.style.display = "none";
-                loginForm.querySelectorAll('input, label').forEach(el => el.style.display = "none");
-                document.querySelectorAll(
-                    '.es-lock, a.forgot-password, a[href*="forgot"], .es-line-lock, .toggle-password.text-muted, .field-icon.password-icon'
-                ).forEach(el => el.style.display = "none");
-            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                }
+            });
         }
     });
 });
 
-
-function showDuoStatus(msg) {
-    let overlay = document.getElementById('duo-sso-status');
+// SSO Status Overlay (shared for both)
+function showSsoStatus(msg, color) {
+    let overlay = document.getElementById('sso-status');
     if (!overlay) {
         overlay = document.createElement('div');
-        overlay.id = 'duo-sso-status';
+        overlay.id = 'sso-status';
         overlay.innerHTML = `
-            <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(255,255,255,0.77);display:flex;align-items:center;justify-content:center;">
+            <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(255,255,255,0.82);display:flex;align-items:center;justify-content:center;">
                 <div style="text-align:center;">
                     <div class="duo-spinner" style="margin-bottom:18px;">
                         <svg width="48" height="48" viewBox="0 0 50 50" aria-label="Loading...">
-                            <circle cx="25" cy="25" r="20" stroke="#74bf4b" stroke-width="5" fill="none" stroke-linecap="round">
+                            <circle cx="25" cy="25" r="20" stroke="${color||'#0078d4'}" stroke-width="5" fill="none" stroke-linecap="round">
                                 <animateTransform attributeName="transform" type="rotate" dur="1s" from="0 25 25" to="360 25 25" repeatCount="indefinite"/>
                             </circle>
                         </svg>
                     </div>
-                    <div style="font-size:1.15em;font-weight:600;color:#4d4d4f;">${msg}</div>
+                    <div style="font-size:1.15em;font-weight:600;color:${color||'#0078d4'};">${msg}</div>
                 </div>
             </div>
         `;
         document.body.appendChild(overlay);
     } else {
         overlay.querySelector('div[style*="font-size"]').innerText = msg;
+        overlay.querySelector('circle').setAttribute('stroke', color || '#0078d4');
         overlay.style.display = 'flex';
     }
 }
-function hideDuoStatus() {
-    let overlay = document.getElementById('duo-sso-status');
+function hideSsoStatus() {
+    let overlay = document.getElementById('sso-status');
     if (overlay) overlay.style.display = 'none';
 }

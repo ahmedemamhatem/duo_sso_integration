@@ -4,8 +4,9 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "client_id",
+  "enable",
   "provision_new_users",
+  "client_id",
   "column_break_kuqh",
   "client_secret",
   "disable_normal_login",
@@ -84,13 +85,19 @@
    "fieldname": "disable_normal_login",
    "fieldtype": "Check",
    "label": "Disable Normal Login"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable",
+   "fieldtype": "Check",
+   "label": "Enable"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-06-30 22:31:27.214253",
+ "modified": "2025-07-09 21:11:18.604524",
  "modified_by": "Administrator",
  "module": "Duo Sso Integration",
  "name": "Duo SSO Settings",

@@ -1,7 +1,146 @@
 {% extends "templates/web.html" %}
 {% block page_content %}
-<h1>Login with Duo</h1>
-<a href="/api/method/duo_sso_integration.api.oauth.start">
-    <button type="button" class="btn btn-primary">Sign in with Duo SSO</button>
-</a>
+<div class="sso-login-container">
+    <h1 class="sso-login-title">Sign In</h1>
+    <div id="sso-buttons"></div>
+</div>
+
+<script>
+frappe.ready(function () {
+    const ssoDiv = document.getElementById('sso-buttons');
+    ssoDiv.innerHTML = ""; // Clear for rerender
+
+    function ssoButton(opts) {
+        const a = document.createElement('a');
+        a.href = opts.href;
+        a.setAttribute('tabindex', 0);
+        a.setAttribute('aria-label', opts.aria || opts.text);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sso-btn ' + (opts.class || '');
+        btn.innerHTML = opts.icon ? opts.icon + '<span>' + opts.text + '</span>' : opts.text;
+
+        a.appendChild(btn);
+        return a;
+    }
+
+    // Simple SVG icons
+    const msIcon = `<svg width="24" height="24" viewBox="0 0 32 32" style="vertical-align:middle;margin-right:10px;"><rect width="14" height="14" x="1" y="1" fill="#f35325"/><rect width="14" height="14" x="17" y="1" fill="#81bc06"/><rect width="14" height="14" x="1" y="17" fill="#05a6f0"/><rect width="14" height="14" x="17" y="17" fill="#ffba08"/><rect width="30" height="30" x="1" y="1" fill="none" stroke="#ccc" stroke-width="0.6"/></svg>`;
+    const duoIcon = `<svg width="30" height="14" viewBox="0 0 211 102" style="vertical-align:middle;margin-right:10px;"><g><path style="opacity:.8;fill:#74bf4b" d="M.3,102.4h34c18.2,0,33.1-14.3,34-32.3H.3v32.3h0Z"/><path style="fill:#74bf4b" d="M34.3,34.3H.3v32.3h68c-.9-18-15.8-32.3-34-32.3"/><path style="fill:#74bf4b" d="M177.2,34.3c-18.2,0-33.1,14.3-34,32.3h67.9c-.9-18-15.8-32.3-34-32.3"/><path style="opacity:.8;fill:#74bf4b" d="M177.2,102.4c18.2,0,33.1-14.3,34-32.3h-67.9c.9,18,15.8,32.3,34,32.3"/><path style="fill:#74bf4b" d="M71.7,34.3v34c0,18.2,14.3,33.1,32.3,34V34.3h-32.3Z"/><polygon style="opacity:.8;fill:#74bf4b" points="107.4 34.3 107.4 102.4 139.8 102.4 139.8 68.3 139.8 34.3 107.4 34.3"/></g></svg>`;
+
+    // Get Duo SSO Settings
+    frappe.call({
+        method: "duo_sso_integration.api.oauth.get_sso_settings_info",
+        args: { provider: "duo" },
+        callback: function (duo) {
+            var duo_enabled = duo.message && (duo.message.enable === 1 || duo.message.enable === "1");
+            frappe.call({
+                method: "duo_sso_integration.api.oauth.get_sso_settings_info",
+                args: { provider: "ms" },
+                callback: function (ms) {
+                    var ms_enabled = ms.message && (ms.message.enable === 1 || ms.message.enable === "1");
+                    var shown = false;
+
+                    if (duo_enabled) {
+                        ssoDiv.appendChild(ssoButton({
+                            href: "/api/method/duo_sso_integration.api.oauth.start?provider=duo",
+                            text: "Sign in with Duo SSO",
+                            class: "duo",
+                            icon: duoIcon,
+                            aria: "Sign in with Duo Single Sign-On"
+                        }));
+                        shown = true;
+                    }
+                    if (ms_enabled) {
+                        ssoDiv.appendChild(ssoButton({
+                            href: "/api/method/duo_sso_integration.api.oauth.start?provider=ms",
+                            text: "Sign in with Microsoft SSO",
+                            class: "ms",
+                            icon: msIcon,
+                            aria: "Sign in with Microsoft Single Sign-On"
+                        }));
+                        shown = true;
+                    }
+                    if (!shown) ssoDiv.innerHTML = "";
+                }
+            });
+        }
+    });
+});
+</script>
+
+<style>
+.sso-login-container {
+    max-width: 370px;
+    margin: 42px auto 0 auto;
+    background: #fff;
+    border-radius: 13px;
+    padding: 40px 28px 28px 28px;
+    box-shadow: 0 8px 48px 0 rgba(0,0,0,0.08), 0 2px 10px 0 rgba(0,0,0,0.04);
+    text-align: center;
+}
+.sso-login-title {
+    font-size: 2em;
+    font-weight: 800;
+    color: #1f2b35;
+    margin-bottom: 34px;
+    letter-spacing: 0.03em;
+}
+.sso-btn {
+    width: 100%;
+    margin: 12px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    padding: 0.95em 1.5em;
+    font-size: 1.11em;
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: 
+        background 0.3s, 
+        box-shadow 0.19s, 
+        transform 0.13s;
+    box-shadow: 0 2px 16px rgba(77,77,79,0.09);
+    outline: none;
+}
+.sso-btn.duo {
+    background: linear-gradient(90deg, #74bf4b 0%, #b6e099 100%);
+    color: #fff;
+}
+.sso-btn.ms {
+    background: linear-gradient(90deg, #0078d4 0%, #61aeee 100%);
+    color: #fff;
+}
+.sso-btn:hover, .sso-btn:focus {
+    box-shadow: 0 4px 28px rgba(77,77,79,0.18);
+    transform: translateY(-2px) scale(1.018);
+}
+.sso-btn:focus {
+    outline: 2.5px solid #0078d4;
+    outline-offset: 2px;
+}
+.sso-btn.duo:focus { outline-color: #74bf4b; }
+
+.sso-btn svg {
+    display: inline-block;
+    vertical-align: middle;
+    margin-bottom: -2px;
+}
+
+@media (max-width:520px) {
+    .sso-login-container {
+        max-width: 96vw;
+        margin-top: 18vw;
+        padding: 18vw 4vw 10vw 4vw;
+    }
+    .sso-login-title {
+        font-size: 1.28em;
+    }
+    .sso-btn { font-size: 1em; }
+}
+</style>
 {% endblock %}
