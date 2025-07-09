@@ -7,15 +7,21 @@ frappe.ready(function () {
                 method: "duo_sso_integration.api.oauth.get_sso_settings_info",
                 args: { provider: "ms" },
                 callback: function (ms) {
+                    // Detect enabled status
                     let duoEnabled = duo.message && (duo.message.enable == 1 || duo.message.enable === "1");
                     let msEnabled = ms.message && (ms.message.enable == 1 || ms.message.enable === "1");
 
-                    // FIXED: Only consider disableNormalLogin for enabled providers!
+                    // Only consider disable_normal_login for enabled providers!
                     let disableNormalLogin =
-                        (duoEnabled && duo.message && (duo.message.disable_normal_login == 1 || duo.message.disable_normal_login === "1"))
-                        ||
+                        (duoEnabled && duo.message && (duo.message.disable_normal_login == 1 || duo.message.disable_normal_login === "1")) ||
                         (msEnabled && ms.message && (ms.message.disable_normal_login == 1 || ms.message.disable_normal_login === "1"));
 
+                    // Debug log (remove after test)
+                    console.log('Duo enabled:', duoEnabled, 'Duo disable_normal_login:', duo.message && duo.message.disable_normal_login);
+                    console.log('MS enabled:', msEnabled, 'MS disable_normal_login:', ms.message && ms.message.disable_normal_login);
+                    console.log('disableNormalLogin result:', disableNormalLogin);
+
+                    // Find the login form
                     let loginForm = document.querySelector('form[data-login-form]')
                         || document.querySelector('.page-card')
                         || document.querySelector('form');
