@@ -7,8 +7,11 @@
  "field_order": [
   "section_break_oauth",
   "enable",
+  "disable_normal_login",
+  "provision_new_users",
   "client_id",
   "client_secret",
+  "client_secret_id",
   "scope",
   "tenant_id",
   "column_break_1",
@@ -16,8 +19,7 @@
   "authorization_endpoint",
   "token_endpoint",
   "userinfo_endpoint",
-  "section_break_options",
-  "disable_normal_login"
+  "redirect_uri"
  ],
  "fields": [
   {
@@ -43,7 +45,7 @@
   {
    "fieldname": "client_secret",
    "fieldtype": "Password",
-   "label": "Client Secret",
+   "label": "Client Secret (Secret Value)",
    "reqd": 1
   },
   {
@@ -93,23 +95,37 @@
    "label": "User Info Endpoint"
   },
   {
-   "fieldname": "section_break_options",
-   "fieldtype": "Section Break",
-   "label": "Options"
-  },
-  {
    "default": "0",
    "description": "Hide classic username/password fields and force SSO",
    "fieldname": "disable_normal_login",
    "fieldtype": "Check",
    "label": "Disable Normal Login"
+  },
+  {
+   "fieldname": "client_secret_id",
+   "fieldtype": "Password",
+   "label": "Client Secret (Secret ID)",
+   "reqd": 1
+  },
+  {
+   "default": "https://graph.microsoft.com/oidc/userinfo",
+   "fieldname": "redirect_uri",
+   "fieldtype": "Data",
+   "label": "Redirect Uri"
+  },
+  {
+   "default": "0",
+   "description": "Hide classic username/password fields and force SSO",
+   "fieldname": "provision_new_users",
+   "fieldtype": "Check",
+   "label": "Provision New Users"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-07-09 21:38:12.994729",
+ "modified": "2025-07-14 20:16:48.494749",
  "modified_by": "Administrator",
  "module": "Duo Sso Integration",
  "name": "MS SSO Settings",

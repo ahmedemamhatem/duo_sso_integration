@@ -84,48 +84,77 @@ def start(provider="duo"):
     frappe.local.response["location"] = url
 
 @frappe.whitelist(allow_guest=True)
-def callback(code=None, state=None, provider="duo"):
+def callback(code=None, state=None, provider="ms"):
     """
-    Handles the OAuth2 callback from the SSO provider.
-    Verifies the state, exchanges the code for tokens, fetches user info,
-    and either logs in or provisions the user.
+    OAuth2 callback endpoint for SSO login.
+
+    This method:
+    - Validates the OAuth2 state parameter to prevent CSRF attacks.
+    - Exchanges the authorization code for tokens with the provider.
+    - Fetches user info using the access token.
+    - Logs in the user or provisions a new account if needed.
+
+    Args:
+        code (str): The authorization code returned by the SSO provider.
+        state (str): The state value used to prevent CSRF.
+        provider (str): The SSO provider key, default is "ms" for Microsoft.
+
+    Raises:
+        frappe.ValidationError: For missing or invalid parameters, or failed requests.
+
+    Returns:
+        None. Redirects the user to the application upon successful login.
     """
     if not state or not code:
-        frappe.throw("Missing state or code from SSO provider.")
+        frappe.throw("Missing `state` or `code` parameter from SSO provider.")
 
-    # Retrieve and validate PKCE/nonce data from cache
-    cache_data = frappe.cache().get_value(f"sso_state_{provider}_{state}")
+    # Retrieve and validate PKCE/code_verifier data from cache
+    cache_key = f"sso_state_{provider}_{state}"
+    cache_data = frappe.cache().get_value(cache_key)
     if not cache_data:
-        frappe.throw("Invalid or expired state (possible CSRF protection).")
+        frappe.throw(
+            "Invalid or expired `state` (possible CSRF protection). "
+            "Try logging in again."
+        )
+    # Optional: Remove state from cache to prevent replay attacks
+    frappe.cache().delete_value(cache_key)
 
     settings = get_sso_settings(provider)
     token_endpoint = getattr(settings, "token_endpoint", None)
     if not token_endpoint:
-        # fallback for backward compatibility
+        # Fallback for backward compatibility
         if provider == "ms":
             authority_url = getattr(settings, "authority_url", "")
             token_endpoint = f"{authority_url}/oauth2/v2.0/token"
         else:
             token_endpoint = getattr(settings, "token_url", "")
 
+    # Use the SAME redirect_uri as in the start() function and Azure portal
+    redirect_uri = getattr(settings, "redirect_uri", frappe.utils.get_url("/api/method/duo_sso_integration.api.oauth.callback"))
+
+    # Build data payload as you requested, including secret_id and code_verifier
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": getattr(settings, "redirect_uri", frappe.utils.get_url("/api/method/duo_sso_integration.api.oauth.callback")),
+        "redirect_uri": redirect_uri,
         "client_id": getattr(settings, "client_id", ""),
         "client_secret": getattr(settings, "client_secret", ""),
-        "code_verifier": cache_data["code_verifier"]
+        "secret_id": getattr(settings, "client_secret_id", ""),
+        "code_verifier": cache_data.get("code_verifier", "")
     }
 
     # Exchange code for access token
-    token_resp = requests.post(token_endpoint, data=data, timeout=10)
-    if token_resp.status_code != 200:
-        frappe.throw(f"Token exchange failed: {token_resp.status_code} {token_resp.text}")
+    try:
+        token_resp = requests.post(token_endpoint, data=data, timeout=10)
+        token_resp.raise_for_status()
+    except requests.RequestException as e:
+        response_text = getattr(e.response, 'text', '')
+        frappe.throw(f"Token exchange failed: {e}\nResponse: {response_text}")
 
     tokens = token_resp.json()
     access_token = tokens.get("access_token")
     if not access_token:
-        frappe.throw("No access token received from SSO provider.")
+        frappe.throw(f"No access token received from SSO provider. Response: {tokens}")
 
     # Fetch user info
     userinfo_endpoint = getattr(settings, "userinfo_endpoint", None)
@@ -135,13 +164,16 @@ def callback(code=None, state=None, provider="duo"):
         else:
             userinfo_endpoint = getattr(settings, "userinfo_url", "")
 
-    userinfo_resp = requests.get(
-        userinfo_endpoint,
-        headers={"Authorization": f"Bearer {access_token}"},
-        timeout=10,
-    )
-    if userinfo_resp.status_code != 200:
-        frappe.throw(f"User info fetch failed: {userinfo_resp.status_code} {userinfo_resp.text}")
+    try:
+        userinfo_resp = requests.get(
+            userinfo_endpoint,
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
+        )
+        userinfo_resp.raise_for_status()
+    except requests.RequestException as e:
+        response_text = getattr(e.response, 'text', '')
+        frappe.throw(f"User info fetch failed: {e}\nResponse: {response_text}")
 
     userinfo = userinfo_resp.json()
     email = userinfo.get("email")
@@ -149,7 +181,7 @@ def callback(code=None, state=None, provider="duo"):
     if not email and provider == "ms":
         email = userinfo.get("preferred_username")
     if not email:
-        frappe.throw("No email address returned by SSO provider.")
+        frappe.throw(f"No email address returned by SSO provider. Full response: {userinfo}")
 
     # Log in or provision the user
     from duo_sso_integration.utils.auth import login_or_signup
